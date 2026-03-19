@@ -1,5 +1,3 @@
-const API_URL = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions'
-
 const CATEGORIES = '餐饮|外卖|交通|购物|娱乐|住房|通讯|医疗|教育|日用|工资|转账|红包|理财|其他'
 
 const SYSTEM_PROMPT = [
@@ -18,12 +16,15 @@ export interface ParseResult {
 
 export async function parseText(text: string): Promise<ParseResult> {
   const today = new Date().toISOString().slice(0, 10)
-  const apiKey = process.env.DOUBAO_API_KEY
-  const model = process.env.DOUBAO_MODEL || 'doubao-1-5-pro-32k-250115'
+  const apiUrl = process.env.AI_API_URL
+  const apiKey = process.env.AI_API_KEY
+  const model = process.env.AI_MODEL
 
-  if (!apiKey) throw new Error('DOUBAO_API_KEY 未配置')
+  if (!apiUrl || !apiKey || !model) {
+    throw new Error('AI_API_URL / AI_API_KEY / AI_MODEL 未配置')
+  }
 
-  const res = await fetch(API_URL, {
+  const res = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -35,7 +36,6 @@ export async function parseText(text: string): Promise<ParseResult> {
         { role: 'system', content: SYSTEM_PROMPT.replaceAll('TODAY', today) },
         { role: 'user', content: text },
       ],
-      temperature: 0.1,
       max_tokens: 200,
     }),
   })
@@ -48,7 +48,9 @@ export async function parseText(text: string): Promise<ParseResult> {
   const data = await res.json()
   const content: string = data.choices?.[0]?.message?.content || ''
 
-  const match = content.match(/\{[^}]+\}/)
+  // 提取 JSON（可能被 markdown 代码块包裹）
+  const cleaned = content.replace(/```json\s*|\s*```/g, '').trim()
+  const match = cleaned.match(/\{[^}]+\}/)
   if (!match) throw new Error('AI 未返回 JSON: ' + content.slice(0, 80))
 
   const parsed = JSON.parse(match[0])
