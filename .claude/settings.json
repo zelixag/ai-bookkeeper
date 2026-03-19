@@ -9,6 +9,15 @@
             "command": "FILE=$(cat | jq -r '.tool_input.file_path // empty'); if [ -n \"$FILE\" ] && echo \"$FILE\" | grep -qE '\\.(ts|vue|js|json|css)$'; then npx prettier --write \"$FILE\" 2>/dev/null; fi"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CMD=$(cat | jq -r '.tool_input.command // empty'); if echo \"$CMD\" | grep -q 'git push'; then echo '代码已推送。建议运行 /review 进行代码审查。'; fi; exit 0"
+          }
+        ]
       }
     ],
     "PreToolUse": [

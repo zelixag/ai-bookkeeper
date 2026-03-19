@@ -1,0 +1,36 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            审查这个 PR，按以下标准：
+
+            1. 分层是否正确（逻辑不在 components 里，API 不在 composables 里）
+            2. TypeScript 类型是否完整（无 any）
+            3. 组件是否超过 150 行
+            4. 是否有安全问题（XSS、注入等）
+            5. 错误是否有处理
+            6. 命名是否清晰
+
+            输出格式：
+            - 🔴 必须修复
+            - 🟡 建议修复
+            - 🟢 可选优化
+
+            如果没有问题，回复"LGTM ✅"
+          claude_args: "--max-turns 5"
