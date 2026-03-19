@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { showToast } from 'vant'
 import { useBills } from '@/composables/useBills'
 import StatsBar from '@/components/StatsBar.vue'
 import TextInput from '@/components/TextInput.vue'
 import BillCard from '@/components/BillCard.vue'
+import VoiceRecorder from '@/components/VoiceRecorder.vue'
 
+const mode = ref<'voice' | 'text'>('voice')
 const { bills, loading, todayTotal, monthTotal, addFromText, remove } = useBills()
 
 async function handleSubmit(text: string) {
@@ -38,14 +41,43 @@ async function handleDelete(id: string) {
       class="mb-4"
     />
 
-    <!-- Input -->
-    <TextInput :loading="loading" class="mb-4" @submit="handleSubmit" />
+    <!-- Mode Toggle -->
+    <div class="flex gap-2 px-4 mb-3 justify-center">
+      <button
+        class="px-4 py-1.5 rounded-full text-xs transition-colors"
+        :class="mode === 'voice' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400'"
+        @click="mode = 'voice'"
+      >
+        语音记账
+      </button>
+      <button
+        class="px-4 py-1.5 rounded-full text-xs transition-colors"
+        :class="mode === 'text' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400'"
+        @click="mode = 'text'"
+      >
+        文字记账
+      </button>
+    </div>
+
+    <!-- Input Area -->
+    <div class="mb-4">
+      <VoiceRecorder
+        v-if="mode === 'voice'"
+        :disabled="loading"
+        @result="handleSubmit"
+      />
+      <TextInput
+        v-else
+        :loading="loading"
+        @submit="handleSubmit"
+      />
+    </div>
 
     <!-- Bill List -->
     <div class="flex-1 overflow-y-auto px-4 pb-6">
       <h2 class="text-sm font-medium text-slate-400 mb-2">账单记录</h2>
       <p v-if="bills.length === 0" class="text-center text-slate-600 text-sm mt-8">
-        还没有记录，试试输入"午饭 35 元"
+        还没有记录，试试说"午饭外卖 35 元"
       </p>
       <div v-else class="flex flex-col gap-2">
         <BillCard
